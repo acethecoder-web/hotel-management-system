@@ -1,0 +1,93 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { line-height: 1.2; margin: 0 0 var(--space-2); }
+p { margin: 0 0 var(--space-2); }
+a { color: var(--color-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; display: block; }
+
+/* Layout */
+.container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 var(--space-3); }
+.page { padding-top: var(--space-4); padding-bottom: var(--space-5); min-height: 70vh; }
+
+.navbar {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+}
+.navbar__inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.navbar__brand { font-weight: 700; font-size: 1.15rem; color: var(--color-text); }
+.navbar__brand:hover { text-decoration: none; }
+.navbar__links { display: flex; gap: var(--space-1); }
+.navbar__link {
+  padding: 0.45rem 0.9rem; border-radius: 999px;
+  color: var(--color-muted); font-weight: 500;
+}
+.navbar__link:hover { background: var(--color-primary-soft); text-decoration: none; }
+.navbar__link.active { background: var(--color-primary-soft); color: var(--color-primary); }
+
+.footer {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4) 0; color: var(--color-muted); font-size: 0.9rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--space-2); padding: 0.7rem 1.2rem; border-radius: var(--radius-sm);
+  border: 1px solid transparent; font: inherit; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, transform 0.05s;
+}
+.btn:hover { text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn--primary { background: var(--color-primary); color: #fff; }
+.btn--primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+.btn--outline { background: transparent; border-color: var(--color-border); color: var(--color-text); }
+.btn--outline:hover:not(:disabled) { background: var(--color-primary-soft); }
+.btn--block { width: 100%; }
+
+/* Forms (used by login, booking, admin later) */
+.field { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-3); }
+.field label { font-weight: 600; font-size: 0.9rem; }
+.field input, .field select, .field textarea {
+  font: inherit; padding: 0.7rem 0.85rem; border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: 2px solid var(--color-primary); outline-offset: 1px;
+}
+.field__error { color: var(--color-danger); font-size: 0.85rem; }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px;
+  font-size: 0.78rem; font-weight: 600; text-transform: capitalize;
+  background: var(--color-primary-soft); color: var(--color-primary);
+}
+.badge--available   { background: var(--color-success-soft); color: var(--color-success); }
+.badge--cleaning    { background: var(--color-warning-soft); color: var(--color-warning); }
+.badge--maintenance { background: var(--color-danger-soft);  color: var(--color-danger); }
+.badge--occupied    { background: var(--color-primary-soft); color: var(--color-primary); }
+
+/* Page states */
+.state {
+  padding: var(--space-5) var(--space-3); text-align: center;
+  border: 1px dashed var(--color-border); border-radius: var(--radius-md);
+  color: var(--color-muted);
+}
+.state--error { color: var(--color-danger); background: var(--color-danger-soft); border-style: solid; border-color: transparent; }
+
+/* Skeleton shimmer */
+.skeleton { background: var(--color-border); border-radius: var(--radius-sm); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.5; } }

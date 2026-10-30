@@ -84,6 +84,21 @@ const rooms = [
       },
     ],
   },
+   {
+    roomNumber: "302",
+    name: "Family Suite",
+    type: "family",
+    description: "Two connected rooms, perfect for families.",
+    pricePerNight: 240,
+    capacity: 5,
+    amenities: ["WiFi", "TV", "Kitchenette"],
+    images: [
+      {
+       url: `${CLOUD}/v1712345678/r6.jpg`,
+        publicId: "r6",
+      },
+    ],
+  },
 ];
 
 try {
