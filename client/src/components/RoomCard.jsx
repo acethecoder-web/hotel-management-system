@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
+import { optimizeImage } from "../utils/cloudinary";
 
 function RoomCard({ room }) {
-  const image = room.images.length > 0 ? room.images[0].url : null;
+const image = room.images.length > 0 ? optimizeImage(room.images[0].url, 600) : null;
 
   return (
     <article className="room-card">
       {image ? (
-        <img src={image} alt={room.name} className="room-card__image" />
-      ) : (
+<img src={image} alt={room.name} className="room-card__image" loading="lazy" />      ) : (
         <div className="room-card__placeholder">No photo yet</div>
       )}
       <div className="room-card__body">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchRoomById } from "../services/roomService";
+import { optimizeImage } from "../utils/cloudinary";
 
 function RoomDetailsPage() {
   const { id } = useParams();
@@ -29,6 +30,13 @@ function RoomDetailsPage() {
   return (
     <div className="room-details">
       <Link to="/rooms">← Back to rooms</Link>
+      {room.images.length > 0 && (
+  <img
+    src={optimizeImage(room.images[0].url, 1000)}
+    alt={room.name}
+    className="room-details__image"
+  />
+)}
       <h1>{room.name}</h1>
       <p className="room-card__type">{room.type} · Room {room.roomNumber}</p>
       <p>{room.description}</p>
