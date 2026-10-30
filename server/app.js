@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import roomRoutes from "./routes/roomRoutes.js";
 
 const app = express();
 
@@ -10,8 +11,6 @@ app.get("/api/health", (req,res) => {
     res.json({status: "ok"})
 });
 
-app.get("/api/hotel", (req,res) => {
-    res.json({status: "Hotel list"})
-});
+app.use("/api/rooms", roomRoutes);
 
 export default app;
