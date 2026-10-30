@@ -15,5 +15,3 @@ app.get("/api/hotel", (req,res) => {
 });
 
 export default app;
-
-
