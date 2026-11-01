@@ -4,9 +4,13 @@ function Navbar() {
   return (
     <header className="navbar">
       <div className="container navbar__inner">
-        <Link to="/" className="navbar__brand">🏨 Harbor Hotel</Link>
+        <Link to="/" className="navbar__brand">
+          HME Hotel Management System
+        </Link>
         <nav className="navbar__links">
-          <NavLink to="/rooms" className="navbar__link">Rooms</NavLink>
+          <NavLink to="/rooms" className="navbar__link">
+            Rooms
+          </NavLink>
           {/* Phase 3 adds Login / My Bookings / Admin here */}
         </nav>
       </div>
