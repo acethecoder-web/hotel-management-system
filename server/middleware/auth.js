@@ -30,3 +30,13 @@ export async function protect(req, res, next) {
     res.status(500).json({ message: "Authentication failed" });
   }
 }
+
+export function requirePasswordChanged(req, res, next) {
+  if (req.user.mustChangePassword) {
+    return res.status(403).json({
+      message: "Password change required",
+      code: "PASSWORD_CHANGE_REQUIRED",
+    });
+  }
+  next();
+}

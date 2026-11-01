@@ -1,4 +1,8 @@
-import { registerUser, loginUser } from "../services/authService.js";
+import {
+  registerUser,
+  loginUser,
+  changePassword,
+} from "../services/authService.js";
 import { cookieOptions } from "../config/cookie.js";
 
 export async function register(req, res) {
@@ -51,4 +55,20 @@ export function me(req, res) {
     role: u.role,
     mustChangePassword: u.mustChangePassword,
   });
+}
+
+export async function changePasswordHandler(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const { token, user } = await changePassword(req.user._id, {
+      currentPassword,
+      newPassword,
+    });
+    res.cookie("token", token, cookieOptions).json(user);
+  } catch (error) {
+    if (error.status === 400)
+      return res.status(400).json({ message: error.message });
+    console.error("change-password error:", error);
+    res.status(500).json({ message: "Could not change password" });
+  }
 }
