@@ -5,7 +5,6 @@ import mongoose from "mongoose";
 import { connectDB } from "../config/db.js";
 import Room from "../models/Room.js";
 
-// Replace YOUR_CLOUD_NAME, version numbers, and file names with your real values
 const CLOUD = "https://res.cloudinary.com/dm2eo9umm/image/upload";
 
 const rooms = [
@@ -34,7 +33,7 @@ const rooms = [
     amenities: ["WiFi", "TV"],
     images: [
       {
-       url: `${CLOUD}/v1712345678/r2.jpg`,
+        url: `${CLOUD}/v1712345678/r2.jpg`,
         publicId: "r2",
       },
     ],
@@ -49,7 +48,7 @@ const rooms = [
     amenities: ["WiFi", "TV", "Minibar", "Balcony"],
     images: [
       {
-       url: `${CLOUD}/v1712345678/r3.jpg`,
+        url: `${CLOUD}/v1712345678/r3.jpg`,
         publicId: "r3",
       },
     ],
@@ -64,7 +63,7 @@ const rooms = [
     amenities: ["WiFi", "TV", "Air conditioning"],
     images: [
       {
-       url: `${CLOUD}/v1712345678/r4.jpg`,
+        url: `${CLOUD}/v1712345678/r4.jpg`,
         publicId: "r4",
       },
     ],
@@ -79,12 +78,12 @@ const rooms = [
     amenities: ["WiFi", "TV", "Kitchenette"],
     images: [
       {
-       url: `${CLOUD}/v1712345678/r5.jpg`,
+        url: `${CLOUD}/v1712345678/r5.jpg`,
         publicId: "r5",
       },
     ],
   },
-   {
+  {
     roomNumber: "302",
     name: "Family Suite",
     type: "family",
@@ -94,7 +93,7 @@ const rooms = [
     amenities: ["WiFi", "TV", "Kitchenette"],
     images: [
       {
-       url: `${CLOUD}/v1712345678/r6.jpg`,
+        url: `${CLOUD}/v1712345678/r6.jpg`,
         publicId: "r6",
       },
     ],
