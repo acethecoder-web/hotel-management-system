@@ -1,6 +1,8 @@
 import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function Navbar() {
+  const { user, loading, logout } = useAuth();
   return (
     <header className="navbar">
       <div className="container navbar__inner">
@@ -11,7 +13,26 @@ function Navbar() {
           <NavLink to="/rooms" className="navbar__link">
             Rooms
           </NavLink>
-          {/* Phase 3 adds Login / My Bookings / Admin here */}
+          {!loading && !user && (
+            <>
+              <NavLink to="/login" className="navbar__link">
+                Log in
+              </NavLink>
+              <NavLink to="/register" className="navbar__link">
+                Register
+              </NavLink>
+            </>
+          )}
+          {user && (
+            <>
+              <span className="navbar__user">
+                Hi, {user.name.split(" ")[0]}
+              </span>
+              <button className="btn btn--outline" onClick={logout}>
+                Log out
+              </button>
+            </>
+          )}
         </nav>
       </div>
     </header>

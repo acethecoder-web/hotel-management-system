@@ -1,0 +1,25 @@
+.auth-card {
+  max-width: 420px;
+  margin: var(--space-5) auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-md);
+}
+.auth-card__alt {
+  text-align: center;
+  margin: var(--space-3) 0 0;
+  color: var(--color-muted);
+}
+.field small {
+  color: var(--color-muted);
+}
+.navbar__user {
+  align-self: center;
+  color: var(--color-muted);
+  padding: 0 var(--space-2);
+}
+.navbar__links {
+  align-items: center;
+}
