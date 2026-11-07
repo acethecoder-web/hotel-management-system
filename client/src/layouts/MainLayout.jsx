@@ -9,7 +9,9 @@ function MainLayout() {
         <Outlet />
       </main>
       <footer className="footer">
-        <div className="container">© {new Date().getFullYear()} Harbor Hotel (fictional demo)</div>
+        <div className="container">
+          © {new Date().getFullYear()} HME Hotel Management System
+        </div>
       </footer>
     </>
   );

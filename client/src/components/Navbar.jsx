@@ -3,16 +3,19 @@ import { useAuth } from "../hooks/useAuth";
 
 function Navbar() {
   const { user, loading, logout } = useAuth();
+
   return (
     <header className="navbar">
       <div className="container navbar__inner">
         <Link to="/" className="navbar__brand">
-          HME Hotel Management System
+          HME Hotel
         </Link>
+
         <nav className="navbar__links">
           <NavLink to="/rooms" className="navbar__link">
             Rooms
           </NavLink>
+
           {!loading && !user && (
             <>
               <NavLink to="/login" className="navbar__link">
@@ -23,8 +26,24 @@ function Navbar() {
               </NavLink>
             </>
           )}
+
           {user && (
             <>
+              {user.role === "admin" && (
+                <NavLink to="/admin" className="navbar__link">
+                  Admin
+                </NavLink>
+              )}
+              {user.role === "superadmin" && (
+                <NavLink to="/superadmin" className="navbar__link">
+                  Accounts
+                </NavLink>
+              )}
+
+              <NavLink to="/change-password" className="navbar__link">
+                Change password
+              </NavLink>
+
               <span className="navbar__user">
                 Hi, {user.name.split(" ")[0]}
               </span>

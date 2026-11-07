@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +22,15 @@ function LoginPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (!loading && user) {
+    return (
+      <Navigate
+        to={user.mustChangePassword ? "/change-password" : "/rooms"}
+        replace
+      />
+    );
   }
 
   return (
