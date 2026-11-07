@@ -5,6 +5,8 @@ import {
 } from "../services/authService.js";
 import { cookieOptions } from "../config/cookie.js";
 
+import { logAction } from "../services/auditService.js";
+
 export async function register(req, res) {
   const { name, email, password } = req.body; // everything else is ignored
 
@@ -39,6 +41,16 @@ export async function login(req, res) {
     console.error("login error:", error);
     res.status(500).json({ message: "Login failed" });
   }
+
+  const { token, user } = await loginUser({ email, password });
+  if (user.role !== "guest") {
+    await logAction({
+      actor: { _id: user.id, name: user.name, email: user.email },
+      action: "auth.login",
+      req,
+    });
+  }
+  res.cookie("token", token, cookieOptions).json(user);
 }
 
 export function logout(req, res) {
@@ -70,5 +82,9 @@ export async function changePasswordHandler(req, res) {
       return res.status(400).json({ message: error.message });
     console.error("change-password error:", error);
     res.status(500).json({ message: "Could not change password" });
+  }
+
+  if (req.user.role !== "guest") {
+    await logAction({ actor: req.user, action: "auth.change_password", req });
   }
 }
