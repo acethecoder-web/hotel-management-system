@@ -1,5 +1,6 @@
 const HOTEL_TZ = import.meta.env.VITE_HOTEL_TIME_ZONE || "Asia/Manila";
 const DAY_MS = 24 * 60 * 60 * 1000;
+const CURRENCY = import.meta.env.VITE_CURRENCY || "PHP";
 
 export function todayISO() {
   return new Date().toLocaleDateString("en-CA", { timeZone: HOTEL_TZ });
@@ -25,5 +26,10 @@ export function formatDate(value) {
 }
 
 export function formatMoney(amount) {
-  return `$${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: CURRENCY,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(amount));
 }
