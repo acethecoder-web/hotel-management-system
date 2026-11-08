@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import cookieParser from "cookie-parser";
 import userRoutes from "./routes/userRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
 
 const app = express();
 
@@ -20,5 +21,5 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/audit-logs", auditRoutes);
-
+app.use("/api/bookings", bookingRoutes);
 export default app;
