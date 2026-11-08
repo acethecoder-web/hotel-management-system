@@ -1,30 +1,58 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { fetchRooms } from "../services/roomService";
+import { searchAvailability } from "../services/bookingService";
 import RoomCard from "../components/RoomCard";
 import RoomCardSkeleton from "../components/RoomCardSkeleton";
+import SearchForm from "../components/SearchForm";
+import { formatDate } from "../utils/dates";
 
 const TYPES = ["all", "single", "deluxe", "family"];
 
 function RoomsPage() {
+  const [params, setParams] = useSearchParams();
+  const checkIn = params.get("checkIn") || "";
+  const checkOut = params.get("checkOut") || "";
+  const guests = params.get("guests") || "1";
+  const hasSearch = Boolean(checkIn && checkOut);
+
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [type, setType] = useState("all");
 
   useEffect(() => {
-    async function loadRooms() {
+    let ignore = false;
+
+    async function load() {
+      setLoading(true);
+      setError("");
       try {
-        setRooms(await fetchRooms());
+        const result = hasSearch
+          ? (await searchAvailability({ checkIn, checkOut, guests })).rooms
+          : await fetchRooms();
+        if (!ignore) setRooms(result);
       } catch (err) {
-        setError(err.message);
+        if (!ignore) {
+          setRooms([]);
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     }
-    loadRooms();
-  }, []);
 
-  const visibleRooms = type === "all" ? rooms : rooms.filter((r) => r.type === type);
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [hasSearch, checkIn, checkOut, guests]);
+
+  const visibleRooms =
+    type === "all" ? rooms : rooms.filter((r) => r.type === type);
+  const search = hasSearch
+    ? `?${new URLSearchParams({ checkIn, checkOut, guests })}`
+    : "";
 
   return (
     <>
@@ -32,6 +60,21 @@ function RoomsPage() {
         <h1>Find your room</h1>
         <p>Comfortable stays, from solo trips to family holidays.</p>
       </div>
+
+      <SearchForm
+        initial={{ checkIn, checkOut, guests }}
+        hasSearch={hasSearch}
+        onSearch={(values) => setParams(values)}
+        onClear={() => setParams({})}
+      />
+
+      {hasSearch && !error && !loading && (
+        <p className="search-summary">
+          {rooms.length} {rooms.length === 1 ? "room" : "rooms"} available,{" "}
+          {formatDate(checkIn)} to {formatDate(checkOut)}, {guests}{" "}
+          {guests === "1" ? "guest" : "guests"}
+        </p>
+      )}
 
       <div className="chips">
         {TYPES.map((t) => (
@@ -45,18 +88,26 @@ function RoomsPage() {
         ))}
       </div>
 
-      {error && <div className="state state--error">Could not load rooms: {error}</div>}
+      {error && (
+        <div className="state state--error">Could not load rooms: {error}</div>
+      )}
 
       {!error && (
         <div className="room-grid">
           {loading
             ? Array.from({ length: 6 }, (_, i) => <RoomCardSkeleton key={i} />)
-            : visibleRooms.map((room) => <RoomCard key={room._id} room={room} />)}
+            : visibleRooms.map((room) => (
+                <RoomCard key={room._id} room={room} search={search} />
+              ))}
         </div>
       )}
 
       {!loading && !error && visibleRooms.length === 0 && (
-        <div className="state">No rooms match this filter.</div>
+        <div className="state">
+          {hasSearch
+            ? "No rooms are available for those dates. Try different dates."
+            : "No rooms match this filter."}
+        </div>
       )}
     </>
   );

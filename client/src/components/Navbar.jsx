@@ -34,9 +34,16 @@ function Navbar() {
                   Admin
                 </NavLink>
               )}
+
               {user.role === "superadmin" && (
                 <NavLink to="/superadmin" className="navbar__link">
                   Accounts
+                </NavLink>
+              )}
+
+              {user.role === "guest" && (
+                <NavLink to="/my-bookings" className="navbar__link">
+                  My bookings
                 </NavLink>
               )}
 

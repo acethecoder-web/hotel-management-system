@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { fetchRoomById } from "../services/roomService";
 import { optimizeImage } from "../utils/cloudinary";
 import StatusBadge from "../components/StatusBadge";
+import BookingPanel from "../components/BookingPanel";
 
 function RoomDetailsPage() {
   const { id } = useParams();
@@ -34,11 +35,17 @@ function RoomDetailsPage() {
 
   return (
     <>
-      <Link to="/rooms" className="details__back">← Back to rooms</Link>
+      <Link to="/rooms" className="details__back">
+        ← Back to rooms
+      </Link>
       <div className="details">
         <section>
           {selected ? (
-            <img className="gallery__main" src={optimizeImage(selected.url, 1100)} alt={room.name} />
+            <img
+              className="gallery__main"
+              src={optimizeImage(selected.url, 1100)}
+              alt={room.name}
+            />
           ) : (
             <div className="gallery__main state">No photo yet</div>
           )}
@@ -64,7 +71,8 @@ function RoomDetailsPage() {
               <StatusBadge status={room.operationalStatus} />
             </div>
             <p className="room-card__meta">
-              {room.type} · Room {room.roomNumber} · Up to {room.capacity} guests
+              {room.type} · Room {room.roomNumber} · Up to {room.capacity}{" "}
+              guests
             </p>
             <p>{room.description}</p>
 
@@ -72,18 +80,15 @@ function RoomDetailsPage() {
               <>
                 <h2>Amenities</h2>
                 <ul className="amenities">
-                  {room.amenities.map((item) => <li key={item}>{item}</li>)}
+                  {room.amenities.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
                 </ul>
               </>
             )}
           </div>
         </section>
-
-        <aside className="booking-panel">
-          <p className="booking-panel__price">${room.pricePerNight} <small>/ night</small></p>
-          <button className="btn btn--primary btn--block" disabled>Reserve (coming soon)</button>
-          <p className="booking-panel__note">Date selection and booking arrive in Phase 4.</p>
-        </aside>
+        <BookingPanel room={room} />
       </div>
     </>
   );

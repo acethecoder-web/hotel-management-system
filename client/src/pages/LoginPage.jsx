@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 function LoginPage() {
@@ -10,13 +10,26 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const from = location.state?.from
+    ? `${location.state.from.pathname}${location.state.from.search || ""}`
+    : "/rooms";
+
+  if (!loading && user) {
+    return (
+      <Navigate
+        to={user.mustChangePassword ? "/change-password" : from}
+        replace
+      />
+    );
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
     try {
       const user = await login({ email, password });
-      navigate(user.mustChangePassword ? "/change-password" : "/rooms");
+      navigate(loggedIn.mustChangePassword ? "/change-password" : from);
     } catch (err) {
       setError(err.message);
     } finally {

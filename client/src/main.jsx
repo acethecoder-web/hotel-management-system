@@ -7,6 +7,7 @@ import "./styles/base.css";
 import "./styles/rooms.css";
 import "./styles/auth.css";
 import "./styles/accounts.css";
+import "./styles/booking.css";
 import { AuthProvider } from "./context/AuthProvider";
 
 createRoot(document.getElementById("root")).render(

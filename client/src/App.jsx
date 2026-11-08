@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import AccountsPage from "./pages/AccountsPage";
+import MyBookingsPage from "./pages/MyBookingsPage";
 
 function App() {
   return (
@@ -32,7 +33,9 @@ function App() {
             element={<div className="state">Admin area (coming soon)</div>}
           />
         </Route>
-
+        <Route element={<ProtectedRoute allowedRoles={["guest"]} />}>
+          <Route path="/my-bookings" element={<MyBookingsPage />} />
+        </Route>
         <Route path="*" element={<div className="state">Page not found</div>} />
       </Route>
     </Routes>
