@@ -27,7 +27,7 @@ function AuditLogTab() {
     async function load() {
       setLoading(true);
       try {
-        const result = await fetchAuditLogs({ action, page });
+        const result = await fetchAuditLogs({ action, page, limit: 5 });
         if (!ignore) {
           setData(result);
           setError("");
@@ -75,8 +75,8 @@ function AuditLogTab() {
         <table className="table">
           <thead>
             <tr>
-              <th>When</th>
-              <th>Who</th>
+              <th>Date</th>
+              <th>User</th>
               <th>Action</th>
               <th>Target</th>
               <th>Details</th>

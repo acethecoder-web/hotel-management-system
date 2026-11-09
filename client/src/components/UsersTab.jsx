@@ -23,7 +23,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [formUser, setFormUser] = useState(undefined); // undefined = closed, null = create, object = edit
+  const [formUser, setFormUser] = useState(undefined); 
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [tempInfo, setTempInfo] = useState(null);
@@ -35,14 +35,14 @@ function UsersTab() {
     async function load() {
       setLoading(true);
       try {
-        const result = await fetchUsers({ ...filters, page });
+        const result = await fetchUsers({ ...filters, page, limit: 5 });
         if (!ignore) {
           setData(result);
           setError("");
         }
       } catch (err) {
         if (err.status === 401)
-          setUser(null); // session was killed: ProtectedRoute sends us to /login
+          setUser(null); 
         else if (!ignore) setError(err.message);
       } finally {
         if (!ignore) setLoading(false);
@@ -76,7 +76,6 @@ function UsersTab() {
         const { user, tempPassword } = await createUserRequest(values);
         setTempInfo({ email: user.email, tempPassword });
       } else {
-        // send only what changed; the API answers 400 if nothing did
         const changes = {};
         for (const key of ["name", "email", "role"]) {
           if (values[key] !== formUser[key]) changes[key] = values[key];
@@ -111,7 +110,7 @@ function UsersTab() {
   function handleArchive(u) {
     const verb = u.active ? "Archive" : "Restore";
     if (!window.confirm(`${verb} ${u.name}?`)) return;
-    runAction(() => setArchivedRequest(u.id, u.active)); // active user -> archived: true
+    runAction(() => setArchivedRequest(u.id, u.active)); 
   }
 
   function handleReset(u) {
