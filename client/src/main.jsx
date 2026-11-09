@@ -8,6 +8,7 @@ import "./styles/rooms.css";
 import "./styles/auth.css";
 import "./styles/accounts.css";
 import "./styles/booking.css";
+import "./styles/admin.css";
 import { AuthProvider } from "./context/AuthProvider";
 import { ConfirmProvider } from "./context/ConfirmProvider";
 
