@@ -9,12 +9,15 @@ import "./styles/auth.css";
 import "./styles/accounts.css";
 import "./styles/booking.css";
 import { AuthProvider } from "./context/AuthProvider";
+import { ConfirmProvider } from "./context/ConfirmProvider";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <ConfirmProvider>
+          <App />
+        </ConfirmProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

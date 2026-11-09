@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useConfirm } from "../hooks/useConfirm";
 import {
   fetchUsers,
   createUserRequest,
@@ -12,8 +13,10 @@ import UserForm from "./UserForm";
 import TempPasswordBox from "./TempPasswordBox";
 import Pagination from "./Pagination";
 
+
 function UsersTab() {
   const { setUser } = useAuth();
+const confirm = useConfirm();
 
   const [data, setData] = useState({ users: [], total: 0, pages: 1 });
   const [filters, setFilters] = useState({ q: "", role: "", active: "" });
@@ -107,24 +110,33 @@ function UsersTab() {
     }
   }
 
-  function handleArchive(u) {
-    const verb = u.active ? "Archive" : "Restore";
-    if (!window.confirm(`${verb} ${u.name}?`)) return;
-    runAction(() => setArchivedRequest(u.id, u.active)); 
-  }
+  async function handleArchive(u) {
+  const verb = u.active ? "Archive" : "Restore";
+  const ok = await confirm({
+    title: `${verb} ${u.name}?`,
+    message: u.active
+      ? "They will be logged out and won't be able to sign in. Their booking history is kept."
+      : "They will be able to sign in again.",
+    confirmLabel: verb,
+    danger: u.active,
+  });
+  if (!ok) return;
+  runAction(() => setArchivedRequest(u.id, u.active));
+}
 
-  function handleReset(u) {
-    if (
-      !window.confirm(
-        `Reset the password for ${u.name}? They will be logged out.`,
-      )
-    )
-      return;
-    runAction(async () => {
-      const { user, tempPassword } = await resetPasswordRequest(u.id);
-      setTempInfo({ email: user.email, tempPassword });
-    });
-  }
+ async function handleReset(u) {
+  const ok = await confirm({
+    title: `Reset password for ${u.name}?`,
+    message: "A new temporary password will be generated and they will be logged out of every device.",
+    confirmLabel: "Reset password",
+    danger: true,
+  });
+  if (!ok) return;
+  runAction(async () => {
+    const { user, tempPassword } = await resetPasswordRequest(u.id);
+    setTempInfo({ email: user.email, tempPassword });
+  });
+}
 
   return (
     <>

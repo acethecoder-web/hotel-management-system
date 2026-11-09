@@ -8,6 +8,8 @@ import {
 import { optimizeImage } from "../utils/cloudinary";
 import { addDays, formatDate, formatMoney, todayISO } from "../utils/dates";
 import StatusBadge from "../components/StatusBadge";
+import { useConfirm } from "../hooks/useConfirm";
+
 
 function canCancel(booking) {
   if (!["pending", "confirmed"].includes(booking.bookingStatus)) return false;
@@ -17,6 +19,7 @@ function canCancel(booking) {
 function MyBookingsPage() {
   const { setUser } = useAuth();
   const location = useLocation();
+  const confirm = useConfirm();
   const newReference = location.state?.newReference;
 
   const [bookings, setBookings] = useState([]);
@@ -52,18 +55,16 @@ function MyBookingsPage() {
   }, [reloadKey, setUser]);
 
   async function handleCancel(booking) {
-    if (!window.confirm(`Cancel booking ${booking.bookingReference}?`)) return;
-    setActionError("");
-    setCancellingId(booking._id);
-    try {
-      await cancelBookingRequest(booking._id);
-      setReloadKey((k) => k + 1);
-    } catch (err) {
-      if (err.status === 401) setUser(null);
-      else setActionError(err.message);
-    } finally {
-      setCancellingId(null);
-    }
+   const ok = await confirm({
+    title: "Cancel this booking?",
+    message: `Booking ${booking.bookingReference} (${formatDate(booking.checkIn)} to ${formatDate(booking.checkOut)}) will be cancelled and the room released.`,
+    confirmLabel: "Cancel booking",
+    cancelLabel: "Keep booking",
+    danger: true,
+  });
+  if (!ok) return;
+
+  setActionError("");
   }
 
   if (loading) return <div className="state">Loading your bookings...</div>;

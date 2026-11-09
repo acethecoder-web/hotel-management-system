@@ -8,6 +8,8 @@ import RegisterPage from "./pages/RegisterPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import AccountsPage from "./pages/AccountsPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import AdminLayout from "./layouts/AdminLayout";
+import DashboardPage from "./pages/admin/DashboardPage";
 
 function App() {
   return (
@@ -27,12 +29,11 @@ function App() {
           <Route path="/superadmin" element={<AccountsPage />} />
         </Route>
 
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route
-            path="/admin"
-            element={<div className="state">Admin area (coming soon)</div>}
-          />
-        </Route>
+<Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+  <Route path="/admin" element={<AdminLayout />}>
+    <Route index element={<DashboardPage />} />
+  </Route>
+</Route>
         <Route element={<ProtectedRoute allowedRoles={["guest"]} />}>
           <Route path="/my-bookings" element={<MyBookingsPage />} />
         </Route>
