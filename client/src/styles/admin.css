@@ -45,6 +45,20 @@
 .stat--warning { background: var(--color-warning-soft); border-color: transparent; }
 .stat--warning .stat__value { color: var(--color-warning); }
 
+.badge--inactive { background: var(--color-border); color: var(--color-muted); }
+
+.thumb { width: 64px; height: 48px; object-fit: cover; border-radius: var(--radius-sm); display: block; }
+.thumb--empty { background: var(--color-border); }
+
+.room-form {
+  max-width: 560px; background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: var(--space-4); margin-bottom: var(--space-4);
+}
+.form-row { display: grid; grid-template-columns: 1fr; gap: 0 var(--space-3); }
+@media (min-width: 560px) {
+  .form-row { grid-template-columns: 1fr 1fr; }
+}
+
 @media (min-width: 720px) {
   .stat-grid { grid-template-columns: repeat(3, 1fr); }
 }

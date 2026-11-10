@@ -11,8 +11,7 @@ function MainLayout() {
       <footer className="footer">
         <div className="container">
           © {new Date().getFullYear()} HME Hotel Management System
-          <h4>Copyrights @ Love Joyce Batuto 2026</h4>
-          <h4>DAVAO CENTRAL COLLEGE</h4>
+          <h4>Love Joyce Batuto 2026 @ DCC </h4>
         </div>
       </footer>
     </>

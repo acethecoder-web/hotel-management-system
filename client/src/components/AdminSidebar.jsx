@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const ITEMS = [
   { to: "/admin", label: "Dashboard", end: true, ready: true },
-  { to: "/admin/rooms", label: "Rooms", ready: false },
+  { to: "/admin/rooms", label: "Rooms", ready: true },
   { to: "/admin/reservations", label: "Reservations", ready: false },
 ];
 
