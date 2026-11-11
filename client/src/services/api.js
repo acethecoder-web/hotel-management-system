@@ -1,17 +1,20 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
 export async function api(path, { method = "GET", body } = {}) {
+  const isForm = body instanceof FormData; // <- this line was missing
+
   const response = await fetch(`${API_URL}${path}`, {
     method,
     credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers: body && !isForm ? { "Content-Type": "application/json" } : undefined,
+    body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   });
 
   let data = null;
   try {
     data = await response.json();
-  } catch {}
+  } catch {
+  }
 
   if (!response.ok) {
     const error = new Error(data?.message || "Something went wrong");

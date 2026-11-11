@@ -55,3 +55,28 @@ export async function setRoomActive(req, res) {
     handleError(res, error, "setRoomActive");
   }
 }
+
+export async function addRoomImages(req, res) {
+  try {
+    const { room, failed } = await adminService.addRoomImages(req.params.id, req.files);
+    res.status(201).json({ room, failed });
+  } catch (error) {
+    handleError(res, error, "addRoomImages");
+  }
+}
+
+export async function removeRoomImage(req, res) {
+  try {
+    res.json(await adminService.removeRoomImage(req.params.id, req.query.publicId));
+  } catch (error) {
+    handleError(res, error, "removeRoomImage");
+  }
+}
+
+export async function setCoverImage(req, res) {
+  try {
+    res.json(await adminService.setCoverImage(req.params.id, req.body.publicId));
+  } catch (error) {
+    handleError(res, error, "setCoverImage");
+  }
+}

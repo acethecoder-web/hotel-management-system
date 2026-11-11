@@ -3,13 +3,13 @@ import Room from "../models/Room.js";
 import { DAY_MS, hotelToday } from "../utils/dateUtils.js";
 import mongoose from "mongoose";
 import { httpError } from "../utils/httpError.js";
+import { uploadImageBuffer, deleteImage } from "./cloudinaryService.js";
 
 export async function getDashboard() {
   const today = hotelToday();
   const tomorrow = new Date(today.getTime() + DAY_MS);
-  const afterWeek = new Date(today.getTime() + 8 * DAY_MS); // exclusive end: days 1 to 7
+  const afterWeek = new Date(today.getTime() + 8 * DAY_MS); 
   const now = new Date();
-const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight", "capacity"];
 
   const livePending = { bookingStatus: "pending", holdExpiresAt: { $gt: now } };
 
@@ -26,7 +26,6 @@ const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight
   ] = await Promise.all([
     Room.countDocuments({ active: true }),
 
-    // Stays that cover tonight: checkIn <= today < checkOut
     Booking.countDocuments({
       checkIn: { $lte: today },
       checkOut: { $gt: today },
@@ -93,6 +92,8 @@ const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight
   };
 }
 
+  const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight", "capacity"];
+
 function toAdminRoom(room) {
   const { reservationSeq, __v, ...safe } = room.toObject();
   return safe;
@@ -108,17 +109,18 @@ function cleanAmenities(value) {
   return items;
 }
 
-// Stays that still need this room: not finished, and either confirmed, in-house, or a live hold
 function upcomingBookingsFilter(roomId) {
   return {
     roomId,
-    checkOut: { $gte: hotelToday() }, // includes guests leaving today (still in the room)
+    checkOut: { $gte: hotelToday() }, 
     $or: [
       { bookingStatus: { $in: ["confirmed", "checked_in"] } },
       { bookingStatus: "pending", holdExpiresAt: { $gt: new Date() } },
     ],
   };
 }
+
+
 
 export async function listRooms() {
   const rooms = await Room.find().sort({ roomNumber: 1 }); // includes inactive rooms
@@ -132,7 +134,7 @@ export async function createRoom(body) {
   });
   if (body.amenities !== undefined) data.amenities = cleanAmenities(body.amenities);
 
-  const room = await Room.create(data); // schema validators run here
+  const room = await Room.create(data); 
   return toAdminRoom(room);
 }
 
@@ -146,7 +148,6 @@ export async function updateRoom(id, body) {
   });
   if (body.amenities !== undefined) room.amenities = cleanAmenities(body.amenities);
 
-  // Don't shrink a room below the party size of a stay that still needs it
   if (room.isModified("capacity")) {
     const tooBig = await Booking.exists({
       ...upcomingBookingsFilter(room._id),
@@ -157,7 +158,7 @@ export async function updateRoom(id, body) {
     }
   }
 
-  await room.save(); // runs the validators (price range, whole-number capacity, ...)
+  await room.save(); 
   return toAdminRoom(room);
 }
 
@@ -188,6 +189,113 @@ export async function setRoomActive(id, active) {
     }
     return toAdminRoom(room);
   });
+}
+
+const MAX_IMAGES_PER_ROOM = 8;
+
+function looksLikeImage(buffer) {
+  if (buffer.length < 12) return false;
+  const jpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const png = buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  const webp =
+    buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+    buffer.subarray(8, 12).toString("ascii") === "WEBP";
+  return jpeg || png || webp;
+}
+
+export async function addRoomImages(id, files) {
+  if (!mongoose.isValidObjectId(id)) throw httpError(400, "Invalid room id");
+  if (!files || files.length === 0) throw httpError(400, "Choose at least one image");
+
+  const room = await Room.findById(id).select("images");
+  if (!room) throw httpError(404, "Room not found");
+
+  if (room.images.length + files.length > MAX_IMAGES_PER_ROOM) {
+    throw httpError(
+      400,
+      `A room can have up to ${MAX_IMAGES_PER_ROOM} photos (it has ${room.images.length}).`
+    );
+  }
+
+  const failed = [];
+  const valid = [];
+  for (const file of files) {
+    if (looksLikeImage(file.buffer)) valid.push(file);
+    else failed.push({ name: file.originalname, reason: "Not a valid JPG, PNG, or WebP image" });
+  }
+
+  const results = await Promise.allSettled(valid.map((f) => uploadImageBuffer(f.buffer)));
+
+  const uploaded = [];
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      uploaded.push({ url: result.value.secure_url, publicId: result.value.public_id });
+    } else {
+      console.error("cloudinary upload failed:", result.reason?.message);
+      failed.push({ name: valid[i].originalname, reason: "Upload to the image service failed" });
+    }
+  });
+
+  if (uploaded.length === 0) throw httpError(502, "None of the images could be uploaded");
+
+  const updated = await Room.findOneAndUpdate(
+    { _id: id, $expr: { $lte: [{ $size: "$images" }, MAX_IMAGES_PER_ROOM - uploaded.length] } },
+    { $push: { images: { $each: uploaded } } },
+    { new: true }
+  );
+
+  if (!updated) {
+    await Promise.allSettled(uploaded.map((u) => deleteImage(u.publicId)));
+    throw httpError(409, "The room's photos changed while uploading. Please try again.");
+  }
+
+  return { room: toAdminRoom(updated), failed };
+}
+
+export async function removeRoomImage(id, publicId) {
+  if (!mongoose.isValidObjectId(id)) throw httpError(400, "Invalid room id");
+  if (typeof publicId !== "string" || !publicId) throw httpError(400, "publicId is required");
+
+  const room = await Room.findOne({ _id: id, "images.publicId": publicId }).select("_id");
+  if (!room) throw httpError(404, "Image not found on this room");
+
+  try {
+    await deleteImage(publicId);
+  } catch (error) {
+    console.error("cloudinary delete failed:", error.message);
+    throw httpError(502, "Could not delete the image from the image service. Please try again.");
+  }
+
+  const updated = await Room.findByIdAndUpdate(
+    id,
+    { $pull: { images: { publicId } } },
+    { new: true }
+  );
+  return toAdminRoom(updated);
+}
+
+export async function setCoverImage(id, publicId) {
+  if (!mongoose.isValidObjectId(id)) throw httpError(400, "Invalid room id");
+  if (typeof publicId !== "string" || !publicId) throw httpError(400, "publicId is required");
+
+  const updated = await Room.findOneAndUpdate(
+    { _id: id, "images.publicId": publicId },
+    [
+      {
+        $set: {
+          images: {
+            $concatArrays: [
+              { $filter: { input: "$images", cond: { $eq: ["$$this.publicId", publicId] } } },
+              { $filter: { input: "$images", cond: { $ne: ["$$this.publicId", publicId] } } },
+            ],
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
+  if (!updated) throw httpError(404, "Image not found on this room");
+  return toAdminRoom(updated);
 }
 
 export const fetchAdminRooms = () => api("/api/admin/rooms");

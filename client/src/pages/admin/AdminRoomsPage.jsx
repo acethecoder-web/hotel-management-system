@@ -8,6 +8,7 @@ import RoomForm from "../../components/RoomForm";
 import StatusBadge from "../../components/StatusBadge";
 import { optimizeImage } from "../../utils/cloudinary";
 import { formatMoney } from "../../utils/dates";
+import ImageManager from "../../components/ImageManager";
 
 function AdminRoomsPage() {
   const { setUser } = useAuth();
@@ -23,6 +24,7 @@ function AdminRoomsPage() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
+const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -52,23 +54,28 @@ function AdminRoomsPage() {
   const visible = rooms.filter((r) =>
     filter === "all" ? true : filter === "active" ? r.active : !r.active
   );
-
-  async function handleSave(values) {
-    setSaving(true);
-    setFormError("");
-    try {
-      if (formRoom === null) await createRoomRequest(values);
-      else await updateRoomRequest(formRoom._id, values);
+  
+async function handleSave(values) {
+  setSaving(true);
+  setFormError("");
+  try {
+    if (formRoom === null) {
+      const created = await createRoomRequest(values);
+      setFormRoom(created); // switch to edit mode, which shows the photo manager
+      setNotice("Room created. You can add photos below.");
+    } else {
+      await updateRoomRequest(formRoom._id, values);
       setFormRoom(undefined);
-      refresh();
-    } catch (err) {
-      if (err.status === 401) setUser(null);
-      else setFormError(err.message);
-    } finally {
-      setSaving(false);
+      setNotice("");
     }
+    refresh();
+  } catch (err) {
+    if (err.status === 401) setUser(null);
+    else setFormError(err.message);
+  } finally {
+    setSaving(false);
   }
-
+}
   async function handleToggleActive(room) {
     const deactivating = room.active;
     const ok = await confirm({
@@ -97,26 +104,37 @@ function AdminRoomsPage() {
         <h1>Rooms</h1>
         <p>Manage the rooms guests can book. Rooms are deactivated, never deleted.</p>
       </div>
+      
+{formRoom !== undefined ? (
+  <>
+    {notice && <div className="notice notice--success">{notice}</div>}
 
-      {formRoom !== undefined ? (
-        <RoomForm
-          key={formRoom?._id ?? "new"}
-          room={formRoom}
-          onSubmit={handleSave}
-          onCancel={() => { setFormRoom(undefined); setFormError(""); }}
-          submitting={saving}
-          error={formError}
-        />
-      ) : (
-        <div className="toolbar">
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">All rooms</option>
-            <option value="active">Active only</option>
-            <option value="inactive">Inactive only</option>
-          </select>
-          <button className="btn btn--primary" onClick={() => setFormRoom(null)}>+ Add room</button>
-        </div>
-      )}
+    <RoomForm
+      key={formRoom?._id ?? "new"}
+      room={formRoom}
+      onSubmit={handleSave}
+      onCancel={() => { setFormRoom(undefined); setFormError(""); setNotice(""); }}
+      submitting={saving}
+      error={formError}
+    />
+
+    {formRoom && (
+      <ImageManager
+        room={formRoom}
+        onChange={(updated) => { setFormRoom(updated); refresh(); }}
+      />
+    )}
+  </>
+) : (
+  <div className="toolbar">
+    <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+      <option value="all">All rooms</option>
+      <option value="active">Active only</option>
+      <option value="inactive">Inactive only</option>
+    </select>
+    <button className="btn btn--primary" onClick={() => setFormRoom(null)}>+ Add room</button>
+  </div>
+)}
 
       {actionError && <div className="state state--error">{actionError}</div>}
       {error && <div className="state state--error">Could not load rooms: {error}</div>}
