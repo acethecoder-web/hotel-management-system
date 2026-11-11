@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
 export async function api(path, { method = "GET", body } = {}) {
-  const isForm = body instanceof FormData; // <- this line was missing
+  const isForm = body instanceof FormData; 
 
   const response = await fetch(`${API_URL}${path}`, {
     method,
@@ -20,6 +20,7 @@ export async function api(path, { method = "GET", body } = {}) {
     const error = new Error(data?.message || "Something went wrong");
     error.status = response.status;
     error.code = data?.code;
+    error.warnings = data?.warnings;
     throw error;
   }
   return data;

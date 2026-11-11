@@ -8,6 +8,7 @@ import StatusBadge from "../../components/StatusBadge";
 import Pagination from "../../components/Pagination";
 import CancelReasonDialog from "../../components/CancelReasonDialog";
 import { formatDate, formatMoney } from "../../utils/dates";
+import useBookingActions from "../../hooks/useBookingActions.js";
 
 const STATUSES = ["pending", "confirmed", "checked_in", "checked_out", "cancelled", "expired"];
 const PAGE_SIZE = 10;
@@ -52,6 +53,8 @@ function ReservationsPage() {
   }, [filters, page, reloadKey, setUser]);
 
   const refresh = () => setReloadKey((k) => k + 1);
+
+  const desk = useBookingActions(() => { refresh(); setSelected(null); });
 
   function changeFilter(name, value) {
     setFilters({ ...filters, [name]: value });
@@ -133,6 +136,7 @@ function ReservationsPage() {
       </div>
 
       {actionError && <div className="state state--error">{actionError}</div>}
+      {desk.error && <div className="state state--error">{desk.error}</div>}
       {error && <div className="state state--error">Could not load reservations: {error}</div>}
 
       <p className="muted">{data.total} {data.total === 1 ? "reservation" : "reservations"}</p>
@@ -166,6 +170,14 @@ function ReservationsPage() {
                     <button className="btn btn--outline" disabled={busyId === b.id}
                       onClick={() => setCancelTarget(b)}>Cancel</button>
                   )}
+                  {b.bookingStatus === "confirmed" && (
+  <button className="btn btn--primary" disabled={desk.busyId === b.id}
+    onClick={() => desk.checkIn(b)}>Check in</button>
+)}
+{b.bookingStatus === "checked_in" && (
+  <button className="btn btn--primary" disabled={desk.busyId === b.id}
+    onClick={() => desk.checkOut(b)}>Check out</button>
+)}
                 </td>
               </tr>
             ))}
@@ -198,6 +210,9 @@ function ReservationsPage() {
             {selected.confirmedAt && (<><dt>Confirmed</dt><dd>{new Date(selected.confirmedAt).toLocaleString()}</dd></>)}
             {selected.cancelledAt && (<><dt>Cancelled</dt><dd>{new Date(selected.cancelledAt).toLocaleString()}</dd></>)}
             {selected.cancelReason && (<><dt>Reason</dt><dd>{selected.cancelReason}</dd></>)}
+            {selected.originalCheckIn && (
+  <><dt>Originally booked</dt><dd>{formatDate(selected.originalCheckIn)}</dd></>
+)}
           </dl>
         </aside>
       )}

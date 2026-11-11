@@ -53,7 +53,7 @@ function validateStay({ checkIn, checkOut, guests }) {
 const priceFor = (pricePerNight, nights) =>
   Math.round(pricePerNight * nights * 100) / 100;
 
-function blockingFilter(checkInDate, checkOutDate, now) {
+export function blockingFilter(checkInDate, checkOutDate, now) {
   return {
     checkIn: { $lt: checkOutDate },
     checkOut: { $gt: checkInDate },
@@ -214,3 +214,4 @@ export async function cancelBooking(userId, bookingId) {
     throw httpError(409, "This booking was just changed. Please refresh.");
   return updated;
 }
+

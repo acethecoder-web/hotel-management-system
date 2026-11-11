@@ -38,3 +38,14 @@ export const confirmReservationRequest = (id) =>
 
 export const cancelReservationRequest = (id, reason) =>
   api(`/api/admin/reservations/${id}/cancel`, { method: "POST", body: { reason } });
+
+export const fetchFrontDesk = () => api("/api/admin/front-desk");
+
+export const checkInRequest = (id, acknowledgeWarnings = false) =>
+  api(`/api/admin/reservations/${id}/check-in`, { method: "POST", body: { acknowledgeWarnings } });
+
+export const checkOutRequest = (id) =>
+  api(`/api/admin/reservations/${id}/check-out`, { method: "POST" });
+
+export const setRoomStatusRequest = (id, status) =>
+  api(`/api/admin/rooms/${id}/status`, { method: "PATCH", body: { status } });

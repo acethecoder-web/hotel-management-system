@@ -1,12 +1,24 @@
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
-import { DAY_MS, hotelToday , parseDateOnly  } from "../utils/dateUtils.js";
 import mongoose from "mongoose";
 import { httpError } from "../utils/httpError.js";
 import { uploadImageBuffer, deleteImage } from "./cloudinaryService.js";
 import User from "../models/User.js";
+import { getSettings } from "./hotelSettingsService.js";
+// ...
+import { DAY_MS, hotelToday, parseDateOnly, hotelMinutesNow, timeToMinutes } from "../utils/dateUtils.js";
+
+export function overdueFilter(settings) {
+  const today = hotelToday();
+  const pastCutoff = hotelMinutesNow() > timeToMinutes(settings.checkOutTime);
+  return {
+    bookingStatus: "checked_in",
+    checkOut: pastCutoff ? { $lte: today } : { $lt: today },
+  };
+}
 
 export async function getDashboard() {
+  const settings = await getSettings();
   const today = hotelToday();
   const tomorrow = new Date(today.getTime() + DAY_MS);
   const afterWeek = new Date(today.getTime() + 8 * DAY_MS); 
@@ -24,6 +36,7 @@ export async function getDashboard() {
     arrivalsNext7Days,
     roomStatusRows,
     recent,
+    overdueDepartures
   ] = await Promise.all([
     Room.countDocuments({ active: true }),
 
@@ -62,6 +75,7 @@ export async function getDashboard() {
       .limit(5)
       .populate("userId", "name email")
       .populate("roomId", "name roomNumber"),
+  Booking.countDocuments(overdueFilter(settings))
   ]);
 
   const roomStatus = { available: 0, cleaning: 0, maintenance: 0, occupied: 0 };
@@ -79,6 +93,7 @@ export async function getDashboard() {
     inHouse,
     pendingConfirmation,
     arrivalsNext7Days,
+    overdueDepartures,
     recentBookings: recent.map((b) => ({
       id: b._id,
       bookingReference: b.bookingReference,
@@ -95,7 +110,7 @@ export async function getDashboard() {
 
   const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight", "capacity"];
 
-function toAdminRoom(room) {
+export function toAdminRoom(room) {
   const { reservationSeq, __v, ...safe } = room.toObject();
   return safe;
 }
@@ -312,7 +327,7 @@ export const setRoomActiveRequest = (id, active) =>
 
 const BOOKING_STATUSES = ["pending", "confirmed", "checked_in", "checked_out", "cancelled", "expired"];
 
-function toAdminBooking(b) {
+export function toAdminBooking(b) {
   return {
     id: b._id,
     bookingReference: b.bookingReference,
@@ -338,7 +353,7 @@ function toAdminBooking(b) {
   };
 }
 
-const populateBooking = (query) =>
+export const populateBooking = (query) =>
   query.populate("userId", "name email").populate("roomId", "name roomNumber");
 
 export async function listReservations({ q, status, from, to, page = 1, limit = 10 }) {

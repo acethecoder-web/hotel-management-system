@@ -12,7 +12,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import DashboardPage from "./pages/admin/DashboardPage";
 import AdminRoomsPage from "./pages/admin/AdminRoomsPage";
 import ReservationsPage from "./pages/admin/ReservationsPage";
-
+import FrontDeskPage from "./pages/admin/FrontDeskPage";
 function App() {
   return (
     <Routes>
@@ -36,9 +36,9 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="rooms" element={<AdminRoomsPage />} />
         <Route path="reservations" element={<ReservationsPage />} />
+        <Route path="front-desk" element={<FrontDeskPage />} />
   </Route>
 </Route>
-
         <Route element={<ProtectedRoute allowedRoles={["guest"]} />}>
           <Route path="/my-bookings" element={<MyBookingsPage />} />
         </Route>

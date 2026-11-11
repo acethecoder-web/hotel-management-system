@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerRequest } from "../services/authService";
 import { useAuth } from "../hooks/useAuth";
+import { useBookingActions } from "../hooks/useBookingActions";
 
 function RegisterPage() {
   const { login } = useAuth();

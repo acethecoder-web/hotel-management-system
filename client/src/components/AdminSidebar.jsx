@@ -4,6 +4,7 @@ const ITEMS = [
   { to: "/admin", label: "Dashboard", end: true, ready: true },
   { to: "/admin/rooms", label: "Rooms", ready: true },
   { to: "/admin/reservations", label: "Reservations", ready: true },
+  { to: "/admin/front-desk", label: "Front desk", ready: true },
 ];
 
 function AdminSidebar() {

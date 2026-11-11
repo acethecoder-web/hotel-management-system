@@ -26,3 +26,21 @@ export function hotelToday() {
 export function nightsBetween(checkIn, checkOut) {
   return Math.round((checkOut - checkIn) / DAY_MS);
 }
+
+export function hotelMinutesNow() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: process.env.HOTEL_TIME_ZONE || "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    // originalCheckIn: b.originalCheckIn,
+    // checkInWarnings: b.checkInWarnings,
+  }).formatToParts(new Date());
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  return get("hour") * 60 + get("minute");
+}
+
+export function timeToMinutes(text) {
+  const [h, m] = text.split(":").map(Number);
+  return h * 60 + m;
+}

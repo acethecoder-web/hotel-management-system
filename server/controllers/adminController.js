@@ -1,5 +1,7 @@
 import * as adminService from "../services/adminService.js";
+import * as frontDesk from "../services/frontDeskService.js";
 import { logAction } from "../services/auditService.js";
+
 
 export async function getDashboard(req, res) {
   try {
@@ -11,8 +13,7 @@ export async function getDashboard(req, res) {
 }
 
 function handleError(res, error, label) {
-  if (error.status) return res.status(error.status).json({ message: error.message });
-
+if (error.status) return res.status(error.status).json({ message: error.message, ...error.extra });
   if (error.name === "ValidationError") {
     const message = Object.values(error.errors).map((e) => e.message).join(", ");
     return res.status(400).json({ message });
@@ -127,5 +128,62 @@ export async function cancelReservation(req, res) {
     res.json(booking);
   } catch (error) {
     handleError(res, error, "cancelReservation");
+  }
+}
+
+
+export async function getFrontDesk(req, res) {
+  try {
+    res.json(await frontDesk.getFrontDesk());
+  } catch (error) {
+    handleError(res, error, "getFrontDesk");
+  }
+}
+
+export async function checkInReservation(req, res) {
+  try {
+    const acknowledge = req.body.acknowledgeWarnings === true;
+    const { booking, warnings, earlyDays } = await frontDesk.checkIn(req.params.id, req.user._id, acknowledge);
+    await logAction({
+      actor: req.user,
+      action: "booking.check_in",
+      target: booking.guest ? { _id: booking.guest.id, email: booking.guest.email } : undefined,
+      details: { bookingReference: booking.bookingReference, earlyDays, warnings },
+      req,
+    });
+    res.json(booking);
+  } catch (error) {
+    handleError(res, error, "checkInReservation");
+  }
+}
+
+export async function checkOutReservation(req, res) {
+  try {
+    const booking = await frontDesk.checkOut(req.params.id, req.user._id);
+    await logAction({
+      actor: req.user,
+      action: "booking.check_out",
+      target: booking.guest ? { _id: booking.guest.id, email: booking.guest.email } : undefined,
+      details: { bookingReference: booking.bookingReference },
+      req,
+    });
+    res.json(booking);
+  } catch (error) {
+    handleError(res, error, "checkOutReservation");
+  }
+}
+
+export async function setRoomStatus(req, res) {
+  try {
+    const room = await frontDesk.setRoomStatus(req.params.id, req.body.status);
+    await logAction({
+      actor: req.user,
+      action: "room.status",
+      details: { roomNumber: room.roomNumber, status: room.operationalStatus },
+      req,
+    });
+    res.json(room);
+  } catch (error) {
+    handleError(res, error, "setRoomStatus");
   }
 }
