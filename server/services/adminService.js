@@ -1,9 +1,10 @@
 import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
-import { DAY_MS, hotelToday } from "../utils/dateUtils.js";
+import { DAY_MS, hotelToday , parseDateOnly  } from "../utils/dateUtils.js";
 import mongoose from "mongoose";
 import { httpError } from "../utils/httpError.js";
 import { uploadImageBuffer, deleteImage } from "./cloudinaryService.js";
+import User from "../models/User.js";
 
 export async function getDashboard() {
   const today = hotelToday();
@@ -123,7 +124,7 @@ function upcomingBookingsFilter(roomId) {
 
 
 export async function listRooms() {
-  const rooms = await Room.find().sort({ roomNumber: 1 }); // includes inactive rooms
+  const rooms = await Room.find().sort({ roomNumber: 1 }); 
   return rooms.map(toAdminRoom);
 }
 
@@ -308,3 +309,136 @@ export const updateRoomRequest = (id, data) =>
 
 export const setRoomActiveRequest = (id, active) =>
   api(`/api/admin/rooms/${id}/active`, { method: "PATCH", body: { active } });
+
+const BOOKING_STATUSES = ["pending", "confirmed", "checked_in", "checked_out", "cancelled", "expired"];
+
+function toAdminBooking(b) {
+  return {
+    id: b._id,
+    bookingReference: b.bookingReference,
+    guest: b.userId ? { id: b.userId._id, name: b.userId.name, email: b.userId.email } : null,
+    room: b.roomId
+      ? { id: b.roomId._id, name: b.roomId.name, roomNumber: b.roomId.roomNumber }
+      : null,
+    checkIn: b.checkIn,
+    checkOut: b.checkOut,
+    nights: b.nights,
+    guestCount: b.guestCount,
+    pricePerNight: b.pricePerNight,
+    totalPrice: b.totalPrice,
+    bookingStatus: b.bookingStatus,
+    paymentStatus: b.paymentStatus,
+    holdExpiresAt: b.holdExpiresAt,
+    confirmedAt: b.confirmedAt,
+    cancelledAt: b.cancelledAt,
+    cancelReason: b.cancelReason,
+    checkedInAt: b.checkedInAt,
+    checkedOutAt: b.checkedOutAt,
+    createdAt: b.createdAt,
+  };
+}
+
+const populateBooking = (query) =>
+  query.populate("userId", "name email").populate("roomId", "name roomNumber");
+
+export async function listReservations({ q, status, from, to, page = 1, limit = 10 }) {
+  const filter = {};
+
+  if (BOOKING_STATUSES.includes(status)) filter.bookingStatus = status;
+
+  if (from) filter.checkOut = { $gt: parseDateOnly(from, "From") };
+  if (to) filter.checkIn = { $lte: parseDateOnly(to, "To") };
+
+  if (typeof q === "string" && q.trim()) {
+    const safe = q.trim().slice(0, 50).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matchingUsers = await User.find({
+      $or: [
+        { name: { $regex: safe, $options: "i" } },
+        { email: { $regex: safe, $options: "i" } },
+      ],
+    }).select("_id").limit(100);
+
+    filter.$or = [
+      { bookingReference: { $regex: safe, $options: "i" } },
+      { userId: { $in: matchingUsers.map((u) => u._id) } },
+    ];
+  }
+
+  const pageNum = Math.max(parseInt(page) || 1, 1);
+  const limitNum = Math.min(Math.max(parseInt(limit) || 10, 1), 100);
+
+  const [rows, total] = await Promise.all([
+    populateBooking(
+      Booking.find(filter).sort({ createdAt: -1 }).skip((pageNum - 1) * limitNum).limit(limitNum)
+    ),
+    Booking.countDocuments(filter),
+  ]);
+
+  return {
+    reservations: rows.map(toAdminBooking),
+    total,
+    page: pageNum,
+    pages: Math.ceil(total / limitNum),
+  };
+}
+
+export async function getReservation(id) {
+  if (!mongoose.isValidObjectId(id)) throw httpError(400, "Invalid booking id");
+  const booking = await populateBooking(Booking.findById(id));
+  if (!booking) throw httpError(404, "Booking not found");
+  return toAdminBooking(booking);
+}
+
+export async function confirmReservation(id, adminId) {
+  if (!mongoose.isValidObjectId(id)) throw httpError(400, "Invalid booking id");
+
+  const updated = await populateBooking(
+    Booking.findOneAndUpdate(
+      { _id: id, bookingStatus: "pending", holdExpiresAt: { $gt: new Date() } },
+      {
+        $set: { bookingStatus: "confirmed", confirmedAt: new Date(), confirmedBy: adminId },
+        $unset: { holdExpiresAt: "" }, 
+      },
+      { new: true }
+    )
+  );
+  if (updated) return toAdminBooking(updated);
+
+  const existing = await Booking.findById(id).select("bookingStatus holdExpiresAt");
+  if (!existing) throw httpError(404, "Booking not found");
+  if (existing.bookingStatus === "pending") {
+    throw httpError(409, "This hold has expired, so the room may have been rebooked. Ask the guest to book again.");
+  }
+  throw httpError(409, `This booking is ${existing.bookingStatus.replace("_", " ")} and can't be confirmed.`);
+}
+
+export async function cancelReservation(id, adminId, reason) {
+  if (!mongoose.isValidObjectId(id)) throw httpError(400, "Invalid booking id");
+
+  let cleanReason;
+  if (reason !== undefined && reason !== null && reason !== "") {
+    if (typeof reason !== "string") throw httpError(400, "Reason must be text");
+    cleanReason = reason.trim().slice(0, 200);
+  }
+
+  const updated = await populateBooking(
+    Booking.findOneAndUpdate(
+      { _id: id, bookingStatus: { $in: ["pending", "confirmed"] } },
+      {
+        $set: {
+          bookingStatus: "cancelled",
+          cancelledAt: new Date(),
+          cancelledBy: adminId,
+          ...(cleanReason ? { cancelReason: cleanReason } : {}),
+        },
+        $unset: { holdExpiresAt: "" },
+      },
+      { new: true }
+    )
+  );
+  if (updated) return toAdminBooking(updated);
+
+  const existing = await Booking.findById(id).select("bookingStatus");
+  if (!existing) throw httpError(404, "Booking not found");
+  throw httpError(409, `This booking is ${existing.bookingStatus.replace("_", " ")} and can't be cancelled here.`);
+}

@@ -11,6 +11,8 @@ const ACTIONS = [
   "user.reset_password",
   "auth.login",
   "auth.change_password",
+  "booking.confirm",
+  "booking.cancel"
 ];
 
 function AuditLogTab() {

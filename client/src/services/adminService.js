@@ -24,3 +24,17 @@ export const removeRoomImageRequest = (id, publicId) =>
 
 export const setCoverImageRequest = (id, publicId) =>
   api(`/api/admin/rooms/${id}/images/cover`, { method: "PATCH", body: { publicId } });
+
+export const fetchReservations = (params) => {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== "" && v != null) search.set(k, v);
+  });
+  return api(`/api/admin/reservations?${search}`);
+};
+
+export const confirmReservationRequest = (id) =>
+  api(`/api/admin/reservations/${id}/confirm`, { method: "POST" });
+
+export const cancelReservationRequest = (id, reason) =>
+  api(`/api/admin/reservations/${id}/cancel`, { method: "POST", body: { reason } });

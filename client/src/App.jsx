@@ -11,6 +11,7 @@ import MyBookingsPage from "./pages/MyBookingsPage";
 import AdminLayout from "./layouts/AdminLayout";
 import DashboardPage from "./pages/admin/DashboardPage";
 import AdminRoomsPage from "./pages/admin/AdminRoomsPage";
+import ReservationsPage from "./pages/admin/ReservationsPage";
 
 function App() {
   return (
@@ -32,10 +33,12 @@ function App() {
 
 <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
   <Route path="/admin" element={<AdminLayout />}>
-    <Route index element={<DashboardPage />} />
+        <Route index element={<DashboardPage />} />
         <Route path="rooms" element={<AdminRoomsPage />} />
+        <Route path="reservations" element={<ReservationsPage />} />
   </Route>
 </Route>
+
         <Route element={<ProtectedRoute allowedRoles={["guest"]} />}>
           <Route path="/my-bookings" element={<MyBookingsPage />} />
         </Route>

@@ -67,6 +67,10 @@ const bookingSchema = new mongoose.Schema(
     checkedInAt: Date,
     checkedOutAt: Date,
     cancelledAt: Date,
+    cancelReason: { type: String, maxlength: 200 },
+    confirmedAt: Date,
+    confirmedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true },
 );
