@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getDashboard,  listRooms, createRoom, updateRoom, setRoomActive ,  addRoomImages, removeRoomImage, setCoverImage , listReservations , getReservation , confirmReservation , cancelReservation , getFrontDesk , setRoomStatus , checkOutReservation , checkInReservation } from "../controllers/adminController.js";
+import { getDashboard,  listRooms, createRoom, updateRoom, setRoomActive , 
+     addRoomImages, removeRoomImage, setCoverImage , listReservations ,
+      getReservation , confirmReservation , cancelReservation ,
+       getFrontDesk , setRoomStatus , checkOutReservation , 
+       checkInReservation , getReport} from "../controllers/adminController.js";
 import { protect, requirePasswordChanged } from "../middleware/auth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { uploadImages } from "../middleware/upload.js";
@@ -24,4 +28,5 @@ router.get("/front-desk", getFrontDesk);
 router.post("/reservations/:id/check-in", checkInReservation);
 router.post("/reservations/:id/check-out", checkOutReservation);
 router.patch("/rooms/:id/status", setRoomStatus);
+router.get("/reports", getReport);
 export default router;

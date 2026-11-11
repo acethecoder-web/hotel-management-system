@@ -108,7 +108,7 @@ export async function getDashboard() {
   };
 }
 
-  const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight", "capacity"];
+const ROOM_FIELDS = ["roomNumber", "name", "type", "description", "pricePerNight", "capacity"];
 
 export function toAdminRoom(room) {
   const { reservationSeq, __v, ...safe } = room.toObject();

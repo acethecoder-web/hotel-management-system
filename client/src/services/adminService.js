@@ -49,3 +49,6 @@ export const checkOutRequest = (id) =>
 
 export const setRoomStatusRequest = (id, status) =>
   api(`/api/admin/rooms/${id}/status`, { method: "PATCH", body: { status } });
+
+export const fetchReport = ({ from, to }) =>
+  api(`/api/admin/reports?${new URLSearchParams({ from, to })}`);

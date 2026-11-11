@@ -13,6 +13,7 @@ import DashboardPage from "./pages/admin/DashboardPage";
 import AdminRoomsPage from "./pages/admin/AdminRoomsPage";
 import ReservationsPage from "./pages/admin/ReservationsPage";
 import FrontDeskPage from "./pages/admin/FrontDeskPage";
+import ReportsPage from "./pages/admin/ReportsPage";
 function App() {
   return (
     <Routes>
@@ -37,6 +38,7 @@ function App() {
         <Route path="rooms" element={<AdminRoomsPage />} />
         <Route path="reservations" element={<ReservationsPage />} />
         <Route path="front-desk" element={<FrontDeskPage />} />
+        <Route path="reports" element={<ReportsPage />} />
   </Route>
 </Route>
         <Route element={<ProtectedRoute allowedRoles={["guest"]} />}>

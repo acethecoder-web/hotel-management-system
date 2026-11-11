@@ -1,7 +1,7 @@
 import * as adminService from "../services/adminService.js";
 import * as frontDesk from "../services/frontDeskService.js";
 import { logAction } from "../services/auditService.js";
-
+import * as reportService from "../services/reportService.js";
 
 export async function getDashboard(req, res) {
   try {
@@ -185,5 +185,13 @@ export async function setRoomStatus(req, res) {
     res.json(room);
   } catch (error) {
     handleError(res, error, "setRoomStatus");
+  }
+}
+
+export async function getReport(req, res) {
+  try {
+    res.json(await reportService.getReport({ from: req.query.from, to: req.query.to }));
+  } catch (error) {
+    handleError(res, error, "getReport");
   }
 }
