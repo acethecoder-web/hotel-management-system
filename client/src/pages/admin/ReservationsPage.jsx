@@ -3,12 +3,15 @@ import { useAuth } from "../../hooks/useAuth";
 import { useConfirm } from "../../hooks/useConfirm";
 import {
   fetchReservations, confirmReservationRequest, cancelReservationRequest,
+    fetchPayments, recordCashPaymentRequest, recordRefundRequest
 } from "../../services/adminService";
 import StatusBadge from "../../components/StatusBadge";
 import Pagination from "../../components/Pagination";
 import CancelReasonDialog from "../../components/CancelReasonDialog";
 import { formatDate, formatMoney } from "../../utils/dates";
 import useBookingActions from "../../hooks/useBookingActions.js";
+import NoteDialog from "../../components/NoteDialog";
+
 
 const STATUSES = ["pending", "confirmed", "checked_in", "checked_out", "cancelled", "expired"];
 const PAGE_SIZE = 10;
@@ -28,6 +31,8 @@ function ReservationsPage() {
   const [busyId, setBusyId] = useState(null);
   const [selected, setSelected] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+const [paymentDialog, setPaymentDialog] = useState(null); 
+const [payments, setPayments] = useState([]);
 
   useEffect(() => {
     let ignore = false;
@@ -51,6 +56,19 @@ function ReservationsPage() {
     load();
     return () => { ignore = true; };
   }, [filters, page, reloadKey, setUser]);
+
+const selectedId = selected?.id;
+const selectedPayStatus = selected?.paymentStatus;
+
+useEffect(() => {
+  if (!selectedId) return;
+  let ignore = false;
+  fetchPayments(selectedId)
+    .then((rows) => { if (!ignore) setPayments(rows); })
+    .catch(() => { if (!ignore) setPayments([]); });
+  return () => { ignore = true; };
+}, [selectedId, selectedPayStatus]);
+
 
   const refresh = () => setReloadKey((k) => k + 1);
 
@@ -104,6 +122,27 @@ function ReservationsPage() {
     setCancelTarget(null);
     if (reason !== null && b) run(b, () => cancelReservationRequest(b.id, reason));
   }
+
+  function handlePaymentClosed(note) {
+  const target = paymentDialog;
+  setPaymentDialog(null);
+  if (note === null || !target) return;
+  const request = target.kind === "cash" ? recordCashPaymentRequest : recordRefundRequest;
+  run(target.booking, async () => (await request(target.booking.id, note)).booking);
+}
+
+const dialogConfig = !paymentDialog ? null : paymentDialog.kind === "cash"
+  ? {
+      title: `Record cash payment for ${paymentDialog.booking.bookingReference}`,
+      message: `Collect ${formatMoney(paymentDialog.booking.totalPrice)} in cash from ${paymentDialog.booking.guest?.name ?? "the guest"}. This marks the booking as paid in full.`,
+      confirmLabel: "Record payment",
+    }
+  : {
+      title: `Record cash refund for ${paymentDialog.booking.bookingReference}`,
+      message: `Hand ${formatMoney(paymentDialog.booking.totalPrice)} back to ${paymentDialog.booking.guest?.name ?? "the guest"}. This marks the booking as refunded.`,
+      confirmLabel: "Record refund",
+      danger: true,
+    };
 
   const hasFilters = Object.values(filters).some(Boolean);
   const canAct = (b) => ["pending", "confirmed"].includes(b.bookingStatus);
@@ -160,24 +199,47 @@ function ReservationsPage() {
                 </td>
                 <td>{formatMoney(b.totalPrice)}</td>
                 <td><StatusBadge status={b.bookingStatus} /></td>
+                <td>
+  <StatusBadge status={b.paymentStatus} />
+  {b.paymentMethod && <span className="muted"> {b.paymentMethod}</span>}
+  {b.bookingStatus === "cancelled" && b.paymentStatus === "paid" && (
+    <div><span className="badge badge--cleaning">refund due</span></div>
+  )}
+</td>
                 <td className="table__actions">
+
                   <button className="btn btn--outline" onClick={() => setSelected(b)}>Details</button>
+                  
                   {b.bookingStatus === "pending" && (
                     <button className="btn btn--primary" disabled={busyId === b.id}
                       onClick={() => handleConfirm(b)}>Confirm</button>
                   )}
+
                   {canAct(b) && (
                     <button className="btn btn--outline" disabled={busyId === b.id}
                       onClick={() => setCancelTarget(b)}>Cancel</button>
                   )}
+
                   {b.bookingStatus === "confirmed" && (
-  <button className="btn btn--primary" disabled={desk.busyId === b.id}
-    onClick={() => desk.checkIn(b)}>Check in</button>
-)}
-{b.bookingStatus === "checked_in" && (
-  <button className="btn btn--primary" disabled={desk.busyId === b.id}
-    onClick={() => desk.checkOut(b)}>Check out</button>
-)}
+                    <button className="btn btn--primary" disabled={desk.busyId === b.id}
+                     onClick={() => desk.checkIn(b)}>Check in</button>
+                )}
+
+                    {b.bookingStatus === "checked_in" && (
+                    <button className="btn btn--primary" disabled={desk.busyId === b.id}
+                        onClick={() => desk.checkOut(b)}>Check out</button>
+                    )}
+
+                    {["confirmed", "checked_in", "checked_out"].includes(b.bookingStatus) && b.paymentStatus === "unpaid" && (
+                    <button className="btn btn--outline" onClick={() => setPaymentDialog({ booking: b, kind: "cash" })}>
+                        Record cash
+                    </button>
+                    )}
+                    {b.bookingStatus === "cancelled" && b.paymentStatus === "paid" && b.paymentMethod === "cash" && (
+                    <button className="btn btn--outline" onClick={() => setPaymentDialog({ booking: b, kind: "refund" })}>
+                        Record refund
+                    </button>
+                    )}
                 </td>
               </tr>
             ))}
@@ -204,8 +266,29 @@ function ReservationsPage() {
             <dt>Stay</dt><dd>{formatDate(selected.checkIn)} to {formatDate(selected.checkOut)} ({selected.nights} nights)</dd>
             <dt>Guests</dt><dd>{selected.guestCount}</dd>
             <dt>Price</dt><dd>{formatMoney(selected.pricePerNight)} per night, {formatMoney(selected.totalPrice)} total</dd>
-            <dt>Payment</dt><dd className="cap">{selected.paymentStatus}</dd>
-            <dt>Created</dt><dd>{new Date(selected.createdAt).toLocaleString()}</dd>
+                <dt>Payment</dt>
+                <dd className="cap">
+                {selected.paymentStatus}{selected.paymentMethod ? ` (${selected.paymentMethod})` : ""}
+                </dd>
+                {payments.length > 0 && (
+                <>
+                    <dt>History</dt>
+                    <dd>
+                    <ul className="plain-list">
+                        {payments.map((p) => (
+                        <li key={p.id}>
+                            {p.kind} · {p.method} · {formatMoney(p.amount)} · {p.status}
+                            {p.recordedBy ? ` · ${p.recordedBy.name}` : ""}
+                            <br />
+                            <span className="muted">
+                            {new Date(p.createdAt).toLocaleString()}{p.note ? ` · ${p.note}` : ""}
+                            </span>
+                        </li>
+                        ))}
+                    </ul>
+                    </dd>
+                </>
+)}            <dt>Created</dt><dd>{new Date(selected.createdAt).toLocaleString()}</dd>
             {selected.holdExpiresAt && (<><dt>Hold expires</dt><dd>{new Date(selected.holdExpiresAt).toLocaleString()}</dd></>)}
             {selected.confirmedAt && (<><dt>Confirmed</dt><dd>{new Date(selected.confirmedAt).toLocaleString()}</dd></>)}
             {selected.cancelledAt && (<><dt>Cancelled</dt><dd>{new Date(selected.cancelledAt).toLocaleString()}</dd></>)}
@@ -218,6 +301,7 @@ function ReservationsPage() {
       )}
 
       <CancelReasonDialog booking={cancelTarget} onClose={handleCancelClosed} />
+      <NoteDialog config={dialogConfig} onClose={handlePaymentClosed} />
     </>
   );
 }

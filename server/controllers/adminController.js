@@ -2,6 +2,7 @@ import * as adminService from "../services/adminService.js";
 import * as frontDesk from "../services/frontDeskService.js";
 import { logAction } from "../services/auditService.js";
 import * as reportService from "../services/reportService.js";
+import * as payments from "../services/paymentService.js";
 
 export async function getDashboard(req, res) {
   try {
@@ -193,5 +194,43 @@ export async function getReport(req, res) {
     res.json(await reportService.getReport({ from: req.query.from, to: req.query.to }));
   } catch (error) {
     handleError(res, error, "getReport");
+  }
+}
+
+const guestTarget = (b) => (b.guest ? { _id: b.guest.id, email: b.guest.email } : undefined);
+
+export async function listPayments(req, res) {
+  try {
+    res.json(await payments.listPayments(req.params.id));
+  } catch (error) {
+    handleError(res, error, "listPayments");
+  }
+}
+
+export async function recordCashPayment(req, res) {
+  try {
+    const { booking, payment } = await payments.recordCashPayment(req.params.id, req.user._id, req.body.note);
+    await logAction({
+      actor: req.user, action: "payment.cash", target: guestTarget(booking),
+      details: { bookingReference: booking.bookingReference, amount: payment.amount, currency: payment.currency },
+      req,
+    });
+    res.status(201).json({ booking, payment: payments.toPayment(payment) });
+  } catch (error) {
+    handleError(res, error, "recordCashPayment");
+  }
+}
+
+export async function recordRefund(req, res) {
+  try {
+    const { booking, payment } = await payments.recordCashRefund(req.params.id, req.user._id, req.body.note);
+    await logAction({
+      actor: req.user, action: "payment.refund", target: guestTarget(booking),
+      details: { bookingReference: booking.bookingReference, amount: payment.amount, method: "cash" },
+      req,
+    });
+    res.json({ booking, payment: payments.toPayment(payment) });
+  } catch (error) {
+    handleError(res, error, "recordRefund");
   }
 }

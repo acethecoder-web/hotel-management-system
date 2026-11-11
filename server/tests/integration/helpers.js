@@ -5,29 +5,28 @@ import Room from "../../models/Room.js";
 import Booking from "../../models/Booking.js";
 import AuditLog from "../../models/AuditLog.js";
 import { hotelToday, DAY_MS } from "../../utils/dateUtils.js";
+import Payment from "../../models/Payment.js";
 
 export const PASSWORD = "Secret#123";
 
 export async function connectTestDb() {
   await mongoose.connect(process.env.MONGODB_URI);
   const name = mongoose.connection.name;
-  // Safety net: tests delete data, so they may only touch a database named *_test
   if (!name.endsWith("_test")) {
     await mongoose.disconnect();
     throw new Error(`Refusing to run tests against "${name}". The database name must end with _test.`);
   }
-  await Promise.all([User.init(), Room.init(), Booking.init()]); // make sure the unique indexes exist
+  await Promise.all([User.init(), Room.init(), Booking.init()]), Payment.init() ; 
 }
 
 export const disconnectTestDb = () => mongoose.disconnect();
 
 export async function resetDb() {
   await Promise.all([
-    User.deleteMany({}), Room.deleteMany({}), Booking.deleteMany({}), AuditLog.deleteMany({}),
+    User.deleteMany({}), Room.deleteMany({}), Booking.deleteMany({}), AuditLog.deleteMany({}),Payment.deleteMany({})
   ]);
 }
 
-// "YYYY-MM-DD" for hotel-today plus n days
 export function dayOffset(n) {
   return new Date(hotelToday().getTime() + n * DAY_MS).toISOString().slice(0, 10);
 }
@@ -38,7 +37,7 @@ export async function makeUser(overrides = {}) {
   return User.create({
     name: "Test User",
     email: `user-${unique()}@test.com`,
-    passwordHash: await bcrypt.hash(PASSWORD, 4), // low cost: tests should be fast
+    passwordHash: await bcrypt.hash(PASSWORD, 4), 
     ...overrides,
   });
 }
@@ -55,7 +54,6 @@ export function makeRoom(overrides = {}) {
   });
 }
 
-// Inserts a booking directly, bypassing the service (for setting up states)
 export function makeBooking(userId, roomId, overrides = {}) {
   return Booking.create({
     userId, roomId,

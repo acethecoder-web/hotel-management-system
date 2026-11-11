@@ -52,3 +52,11 @@ export const setRoomStatusRequest = (id, status) =>
 
 export const fetchReport = ({ from, to }) =>
   api(`/api/admin/reports?${new URLSearchParams({ from, to })}`);
+
+export const fetchPayments = (id) => api(`/api/admin/reservations/${id}/payments`);
+
+export const recordCashPaymentRequest = (id, note) =>
+  api(`/api/admin/reservations/${id}/payments/cash`, { method: "POST", body: { note } });
+
+export const recordRefundRequest = (id, note) =>
+  api(`/api/admin/reservations/${id}/refund`, { method: "POST", body: { note } });

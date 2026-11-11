@@ -81,6 +81,8 @@ export async function getDashboard() {
   const roomStatus = { available: 0, cleaning: 0, maintenance: 0, occupied: 0 };
   roomStatusRows.forEach((row) => { roomStatus[row._id] = row.count; });
 
+  const refundsDue = await Booking.countDocuments({ bookingStatus: "cancelled", paymentStatus: "paid" });
+
   return {
     date: today.toISOString().slice(0, 10),
     rooms: { active: activeRooms, status: roomStatus },
@@ -94,6 +96,7 @@ export async function getDashboard() {
     pendingConfirmation,
     arrivalsNext7Days,
     overdueDepartures,
+    refundsDue,
     recentBookings: recent.map((b) => ({
       id: b._id,
       bookingReference: b.bookingReference,
@@ -343,6 +346,7 @@ export function toAdminBooking(b) {
     totalPrice: b.totalPrice,
     bookingStatus: b.bookingStatus,
     paymentStatus: b.paymentStatus,
+    paymentMethod: b.paymentMethod,
     holdExpiresAt: b.holdExpiresAt,
     confirmedAt: b.confirmedAt,
     cancelledAt: b.cancelledAt,

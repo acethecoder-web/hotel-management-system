@@ -3,7 +3,7 @@ import { getDashboard,  listRooms, createRoom, updateRoom, setRoomActive ,
      addRoomImages, removeRoomImage, setCoverImage , listReservations ,
       getReservation , confirmReservation , cancelReservation ,
        getFrontDesk , setRoomStatus , checkOutReservation , 
-       checkInReservation , getReport} from "../controllers/adminController.js";
+       checkInReservation , getReport , listPayments , recordCashPayment, recordRefund  } from "../controllers/adminController.js";
 import { protect, requirePasswordChanged } from "../middleware/auth.js";
 import { requireRole } from "../middleware/requireRole.js";
 import { uploadImages } from "../middleware/upload.js";
@@ -29,4 +29,8 @@ router.post("/reservations/:id/check-in", checkInReservation);
 router.post("/reservations/:id/check-out", checkOutReservation);
 router.patch("/rooms/:id/status", setRoomStatus);
 router.get("/reports", getReport);
+router.get("/reservations/:id/payments", listPayments);
+router.post("/reservations/:id/payments/cash", recordCashPayment);
+router.post("/reservations/:id/refund", recordRefund);
+
 export default router;

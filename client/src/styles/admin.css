@@ -106,6 +106,12 @@
 .chart__bar:hover { opacity: 0.7; }
 .chart__axis { display: flex; justify-content: space-between; color: var(--color-muted); font-size: 0.75rem; margin-top: var(--space-1); }
 
+.badge--paid { background: var(--color-success-soft); color: var(--color-success); }
+.badge--unpaid { background: var(--color-warning-soft); color: var(--color-warning); }
+.badge--refunded { background: var(--color-border); color: var(--color-muted); }
+.plain-list { list-style: none; margin: 0; padding: 0; }
+.plain-list li { padding: 0.25rem 0; }
+
 @media (min-width: 560px) {
   .image-grid { grid-template-columns: repeat(3, 1fr); }
 }

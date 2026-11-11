@@ -69,6 +69,8 @@ function DashboardPage() {
         <StatCard label="Maintenance :" value={rooms.status.maintenance} />
         <StatCard label="Overdue departures: "value={data.overdueDepartures}
           tone={data.overdueDepartures > 0 ? "warning" : "default"}/>
+        <StatCard label="Refunds due" value={data.refundsDue} hint="cancelled but still paid"
+  tone={data.refundsDue > 0 ? "warning" : "default"} />
       </div>
         <br></br>
       <h2 className="section-title">Recent bookings</h2>

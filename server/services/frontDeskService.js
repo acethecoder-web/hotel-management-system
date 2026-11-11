@@ -97,6 +97,15 @@ export async function checkIn(id, adminId, acknowledgeWarnings = false) {
     let earlyDays = 0;
 
     if (today < booking.checkIn) {
+
+              if (booking.paymentStatus === "paid") {
+        throw httpError(
+          409,
+          "This booking is already paid for its original dates. Arriving early would change the amount, " +
+            "which isn't supported yet. Ask the guest to wait for the booked date, or cancel (with a refund) and rebook."
+        );
+      }
+
       earlyDays = nightsBetween(today, booking.checkIn);
 
       const clash = await Booking.exists({

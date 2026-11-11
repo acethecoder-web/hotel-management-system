@@ -188,6 +188,10 @@ export async function cancelBooking(userId, bookingId) {
     throw httpError(400, "This booking can't be cancelled");
   }
 
+  if (booking.paymentStatus === "paid") {
+    throw httpError(400, "This booking has been paid. Please contact the hotel to cancel it and arrange a refund.");
+  }
+
   const lastCancelDay = new Date(
     booking.checkIn.getTime() - CANCEL_CUTOFF_DAYS * DAY_MS,
   );
@@ -202,7 +206,7 @@ export async function cancelBooking(userId, bookingId) {
     {
       _id: bookingId,
       userId,
-      bookingStatus: { $in: ["pending", "confirmed"] },
+      bookingStatus: { $in: ["pending", "confirmed", "unpaid" ] },
     },
     {
       $set: { bookingStatus: "cancelled", cancelledAt: new Date() },

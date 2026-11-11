@@ -62,7 +62,7 @@ const bookingSchema = new mongoose.Schema(
       enum: ["unpaid", "paid", "refunded"],
       default: "unpaid",
     },
-
+    paymentMethod: { type: String, enum: ["cash", "paypal"] }, 
     holdExpiresAt: Date,
     checkedInAt: Date,
     checkedOutAt: Date,

@@ -12,6 +12,7 @@ import { useConfirm } from "../hooks/useConfirm";
 
 
 function canCancel(booking) {
+  if (booking.paymentStatus === "paid") return false;
   if (!["pending", "confirmed"].includes(booking.bookingStatus)) return false;
   return todayISO() <= addDays(booking.checkIn.slice(0, 10), -1);
 }
@@ -117,6 +118,7 @@ function MyBookingsPage() {
                 <div className="booking-card__head">
                   <h2>{b.room?.name ?? "Room"}</h2>
                   <StatusBadge status={b.bookingStatus} />
+                  <StatusBadge status={b.paymentStatus} />
                 </div>
                 <p className="muted">
                   Reference <code>{b.bookingReference}</code>
@@ -146,6 +148,9 @@ function MyBookingsPage() {
                       : "Cancel booking"}
                   </button>
                 )}
+                {b.paymentStatus === "paid" && ["pending", "confirmed"].includes(b.bookingStatus) && (
+  <p className="muted">This booking is paid. To cancel it, please contact the hotel.</p>
+)}
               </div>
             </article>
           );
