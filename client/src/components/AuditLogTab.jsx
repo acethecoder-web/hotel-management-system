@@ -7,7 +7,7 @@ const ACTIONS = [
   "user.create", "user.update", "user.archive", "user.restore",
   "user.reset_password", "auth.login", "auth.change_password",
   "booking.confirm", "booking.cancel",
-  "booking.check_in", "booking.check_out", "room.status",
+  "booking.check_in", "booking.check_out", "room.status","auth.login_failed"
 ];
 
 function AuditLogTab() {

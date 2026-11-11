@@ -7,6 +7,8 @@ import { cookieOptions } from "../config/cookie.js";
 
 import { logAction } from "../services/auditService.js";
 
+import User from "../models/User.js"
+
 export async function register(req, res) {
   const { name, email, password } = req.body; // everything else is ignored
 
@@ -30,16 +32,30 @@ export async function register(req, res) {
   }
 }
 
+async function recordFailedLogin(email, req) {
+  try {
+    if (typeof email !== "string") return;
+    const user = await User.findOne({ email: email.toLowerCase().trim() }).select("name email role");
+    // Staff accounts only: random emails can't fill the log
+    if (user && user.role !== "guest") {
+      await logAction({ actor: user, action: "auth.login_failed", req });
+    }
+  } catch (error) {
+    console.error("failed-login audit error:", error.message);
+  }
+}
+
 export async function login(req, res) {
   const { email, password } = req.body;
   try {
     const { token, user } = await loginUser({ email, password });
     res.cookie("token", token, cookieOptions).json(user);
   } catch (error) {
-    if (error.status === 401)
-      return res.status(401).json({ message: error.message });
-    console.error("login error:", error);
-    res.status(500).json({ message: "Login failed" });
+    if (error.status === 401) {
+  res.status(401).json({ message: error.message });
+  await recordFailedLogin(email, req); 
+  return;
+}
   }
 
   const { token, user } = await loginUser({ email, password });
@@ -88,3 +104,4 @@ export async function changePasswordHandler(req, res) {
     await logAction({ actor: req.user, action: "auth.change_password", req });
   }
 }
+

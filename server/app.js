@@ -7,9 +7,15 @@ import userRoutes from "./routes/userRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import helmet from "helmet";
+import { apiLimiter } from "./middleware/rateLimit.js";
+import { originGuard } from "./middleware/originGuard.js";
 
 const app = express();
 
+if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
+
+app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -17,6 +23,9 @@ app.use(cookieParser());
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/api", apiLimiter);
+app.use("/api", originGuard);
 
 app.use("/api/rooms", roomRoutes);
 app.use("/api/auth", authRoutes);
