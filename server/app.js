@@ -10,6 +10,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import helmet from "helmet";
 import { apiLimiter } from "./middleware/rateLimit.js";
 import { originGuard } from "./middleware/originGuard.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 const app = express();
 
@@ -33,4 +34,5 @@ app.use("/api/users", userRoutes);
 app.use("/api/audit-logs", auditRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRoutes);
 export default app;

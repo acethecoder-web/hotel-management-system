@@ -7,6 +7,7 @@ import User from "../models/User.js";
 import { getSettings } from "./hotelSettingsService.js";
 // ...
 import { DAY_MS, hotelToday, parseDateOnly, hotelMinutesNow, timeToMinutes } from "../utils/dateUtils.js";
+import Payment from "../models/Payment.js"
 
 export function overdueFilter(settings) {
   const today = hotelToday();
@@ -82,6 +83,7 @@ export async function getDashboard() {
   roomStatusRows.forEach((row) => { roomStatus[row._id] = row.count; });
 
   const refundsDue = await Booking.countDocuments({ bookingStatus: "cancelled", paymentStatus: "paid" });
+  const paymentsNeedingAttention = await Payment.countDocuments({ status: "action_needed" });
 
   return {
     date: today.toISOString().slice(0, 10),
@@ -97,6 +99,7 @@ export async function getDashboard() {
     arrivalsNext7Days,
     overdueDepartures,
     refundsDue,
+    paymentsNeedingAttention,
     recentBookings: recent.map((b) => ({
       id: b._id,
       bookingReference: b.bookingReference,

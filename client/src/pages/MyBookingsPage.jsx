@@ -9,7 +9,7 @@ import { optimizeImage } from "../utils/cloudinary";
 import { addDays, formatDate, formatMoney, todayISO } from "../utils/dates";
 import StatusBadge from "../components/StatusBadge";
 import { useConfirm } from "../hooks/useConfirm";
-
+import PayPalPayment from "../components/PayPalPayment";
 
 function canCancel(booking) {
   if (booking.paymentStatus === "paid") return false;
@@ -29,7 +29,10 @@ function MyBookingsPage() {
   const [actionError, setActionError] = useState("");
   const [cancellingId, setCancellingId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [payingId, setPayingId] = useState(null);
+  const [payNotice, setPayNotice] = useState(null);
 
+  
   useEffect(() => {
     let ignore = false;
 
@@ -68,6 +71,13 @@ function MyBookingsPage() {
   setActionError("");
   }
 
+  const canPay = (b) => ["pending", "confirmed"].includes(b.bookingStatus) && b.paymentStatus === "unpaid";
+
+function handlePayResult(result) {
+  setPayNotice(result);
+  setPayingId(null);
+  setReloadKey((k) => k + 1);
+}
   if (loading) return <div className="state">Loading your bookings...</div>;
 
   return (
@@ -80,6 +90,11 @@ function MyBookingsPage() {
       {newReference && (
         <div className="notice notice--success" role="status">
           <strong>Reservation created: {newReference}</strong>
+          {payNotice && (
+  <div className={`notice ${payNotice.result === "paid" ? "notice--success" : "notice--warning"}`} role="status">
+    {payNotice.message}
+  </div>
+)}
           <p>
             It is held for 24 hours while the hotel confirms it. Keep your
             reference number handy for check-in.
@@ -114,44 +129,59 @@ function MyBookingsPage() {
                   <div className="room-card__placeholder">No photo</div>
                 )}
               </div>
-              <div className="booking-card__body">
-                <div className="booking-card__head">
-                  <h2>{b.room?.name ?? "Room"}</h2>
-                  <StatusBadge status={b.bookingStatus} />
-                  <StatusBadge status={b.paymentStatus} />
-                </div>
-                <p className="muted">
-                  Reference <code>{b.bookingReference}</code>
-                </p>
-                <p>
-                  {formatDate(b.checkIn)} to {formatDate(b.checkOut)} ·{" "}
-                  {b.nights} {b.nights === 1 ? "night" : "nights"} ·{" "}
-                  {b.guestCount} {b.guestCount === 1 ? "guest" : "guests"}
-                </p>
-                <p className="booking-card__price">
-                  {formatMoney(b.totalPrice)}{" "}
-                  <small>({formatMoney(b.pricePerNight)} / night)</small>
-                </p>
-                {b.bookingStatus === "pending" && b.holdExpiresAt && (
-                  <p className="muted">
-                    Held until {new Date(b.holdExpiresAt).toLocaleString()}
-                  </p>
-                )}
-                {canCancel(b) && (
-                  <button
-                    className="btn btn--outline"
-                    disabled={cancellingId === b._id}
-                    onClick={() => handleCancel(b)}
-                  >
-                    {cancellingId === b._id
-                      ? "Cancelling..."
-                      : "Cancel booking"}
-                  </button>
-                )}
-                {b.paymentStatus === "paid" && ["pending", "confirmed"].includes(b.bookingStatus) && (
-  <p className="muted">This booking is paid. To cancel it, please contact the hotel.</p>
-)}
-              </div>
+             <div className="booking-card__body">
+  <div className="booking-card__head">
+    <div>
+      <h2>{b.room?.name ?? "Room"}</h2>
+      <p className="muted">Reference <code>{b.bookingReference}</code></p>
+    </div>
+    <div className="booking-card__badges">
+      <StatusBadge status={b.bookingStatus} />
+      <StatusBadge status={b.paymentStatus} />
+    </div>
+  </div>
+
+  <p className="booking-card__stay">
+    {formatDate(b.checkIn)} to {formatDate(b.checkOut)} · {b.nights}{" "}
+    {b.nights === 1 ? "night" : "nights"} · {b.guestCount}{" "}
+    {b.guestCount === 1 ? "guest" : "guests"}
+  </p>
+
+  <p className="booking-card__price">
+    {formatMoney(b.totalPrice)} <small>({formatMoney(b.pricePerNight)} / night)</small>
+  </p>
+
+  {b.bookingStatus === "pending" && b.holdExpiresAt && (
+    <p className="muted">
+      Held until {new Date(b.holdExpiresAt).toLocaleString()}. Paying online confirms it immediately.
+    </p>
+  )}
+  {b.paymentStatus === "paid" && ["pending", "confirmed"].includes(b.bookingStatus) && (
+    <p className="muted">This booking is paid. To cancel it, please contact the hotel.</p>
+  )}
+
+  {(canPay(b) || canCancel(b)) && (
+    <div className="booking-card__actions">
+      {canPay(b) && payingId !== b._id && (
+        <button className="btn btn--primary" onClick={() => setPayingId(b._id)}>
+          Pay with PayPal
+        </button>
+      )}
+      {canCancel(b) && (
+        <button className="btn btn--outline" disabled={cancellingId === b._id}
+          onClick={() => handleCancel(b)}>
+          {cancellingId === b._id ? "Cancelling..." : "Cancel booking"}
+        </button>
+      )}
+    </div>
+  )}
+
+  {canPay(b) && payingId === b._id && (
+    <div className="booking-card__pay">
+      <PayPalPayment booking={b} onResult={handlePayResult} onClose={() => setPayingId(null)} />
+    </div>
+  )}
+</div>
             </article>
           );
         })}

@@ -95,6 +95,9 @@ useEffect(() => {
     setBusyId(booking.id);
     try {
       const updated = await action();
+      if (updated?.refundError) {
+  setActionError(`Booking cancelled, but the PayPal refund failed: ${updated.refundError} Use "Retry refund".`);
+}
       if (selected?.id === booking.id) setSelected(updated);
       refresh();
     } catch (err) {
@@ -137,10 +140,12 @@ const dialogConfig = !paymentDialog ? null : paymentDialog.kind === "cash"
       message: `Collect ${formatMoney(paymentDialog.booking.totalPrice)} in cash from ${paymentDialog.booking.guest?.name ?? "the guest"}. This marks the booking as paid in full.`,
       confirmLabel: "Record payment",
     }
-  : {
-      title: `Record cash refund for ${paymentDialog.booking.bookingReference}`,
-      message: `Hand ${formatMoney(paymentDialog.booking.totalPrice)} back to ${paymentDialog.booking.guest?.name ?? "the guest"}. This marks the booking as refunded.`,
-      confirmLabel: "Record refund",
+   : {
+      title: `Refund ${paymentDialog.booking.bookingReference}`,
+      message: paymentDialog.booking.paymentMethod === "paypal"
+        ? `${formatMoney(paymentDialog.booking.totalPrice)} will be sent back to the guest through PayPal.`
+        : `Hand ${formatMoney(paymentDialog.booking.totalPrice)} back to ${paymentDialog.booking.guest?.name ?? "the guest"}. This marks the booking as refunded.`,
+      confirmLabel: paymentDialog.booking.paymentMethod === "paypal" ? "Send refund" : "Record refund",
       danger: true,
     };
 
@@ -235,9 +240,10 @@ const dialogConfig = !paymentDialog ? null : paymentDialog.kind === "cash"
                         Record cash
                     </button>
                     )}
-                    {b.bookingStatus === "cancelled" && b.paymentStatus === "paid" && b.paymentMethod === "cash" && (
-                    <button className="btn btn--outline" onClick={() => setPaymentDialog({ booking: b, kind: "refund" })}>
-                        Record refund
+                    {b.bookingStatus === "cancelled" && b.paymentStatus === "paid" && (
+                    <button className="btn btn--outline"
+                        onClick={() => setPaymentDialog({ booking: b, kind: "refund" })}>
+                        {b.paymentMethod === "paypal" ? "Retry refund" : "Record refund"}
                     </button>
                     )}
                 </td>

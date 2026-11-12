@@ -43,6 +43,9 @@ function DashboardPage() {
       </div>
 
       <div className="stat-grid">
+        <StatCard label="Payments needing attention" value={data.paymentsNeedingAttention}
+  hint="refund failed, fix in PayPal"
+  tone={data.paymentsNeedingAttention > 0 ? "warning" : "default"} />
         <StatCard
           label="Occupancy tonight :"
           value={` ${ occupancy.percent} % ` }

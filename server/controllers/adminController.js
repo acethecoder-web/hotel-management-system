@@ -3,6 +3,7 @@ import * as frontDesk from "../services/frontDeskService.js";
 import { logAction } from "../services/auditService.js";
 import * as reportService from "../services/reportService.js";
 import * as payments from "../services/paymentService.js";
+import { refundBooking, refundPaypalBooking } from "../services/paypalService.js"
 
 export async function getDashboard(req, res) {
   try {
@@ -120,18 +121,31 @@ export async function cancelReservation(req, res) {
   try {
     const booking = await adminService.cancelReservation(req.params.id, req.user._id, req.body.reason);
     await logAction({
-      actor: req.user,
-      action: "booking.cancel",
-      target: booking.guest ? { _id: booking.guest.id, email: booking.guest.email } : undefined,
+      actor: req.user, action: "booking.cancel", target: guestTarget(booking),
       details: { bookingReference: booking.bookingReference, reason: booking.cancelReason },
       req,
     });
+
+    if (booking.paymentStatus === "paid" && booking.paymentMethod === "paypal") {
+      try {
+        const refunded = await refundPaypalBooking(booking.id, req.user._id);
+        await logAction({
+          actor: req.user, action: "payment.refund", target: guestTarget(booking),
+          details: { bookingReference: booking.bookingReference, amount: refunded.payment.amount, method: "paypal" },
+          req,
+        });
+        return res.json(refunded.booking);
+      } catch (refundError) {
+        console.error("auto refund on cancel failed:", refundError.message);
+        return res.json({ ...booking, refundError: refundError.message });
+      }
+    }
+
     res.json(booking);
   } catch (error) {
     handleError(res, error, "cancelReservation");
   }
 }
-
 
 export async function getFrontDesk(req, res) {
   try {
@@ -226,7 +240,7 @@ export async function recordRefund(req, res) {
     const { booking, payment } = await payments.recordCashRefund(req.params.id, req.user._id, req.body.note);
     await logAction({
       actor: req.user, action: "payment.refund", target: guestTarget(booking),
-      details: { bookingReference: booking.bookingReference, amount: payment.amount, method: "cash" },
+      details: { bookingReference: booking.bookingReference, amount: payment.amount, method: payment.method },
       req,
     });
     res.json({ booking, payment: payments.toPayment(payment) });
